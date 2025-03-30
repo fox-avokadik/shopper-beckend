@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package auth;
+
+import "google/api/annotations.proto";
+
+option go_package = "/Users/stepanbezhuk/work/Beckend/ShopperBE/auth-service/proto/auth;auth";
+
+service AuthService {
+  rpc CreateUser (CreateUserRequest) returns (CreateUserResponse) {
+    option (google.api.http) = {
+      post: "/v1/registration"
+      body: "*"
+    };
+  }
+
+  rpc UserAuthorize (UserAuthorizationRequest) returns (UserAuthorizationResponse) {
+    option (google.api.http) = {
+      post: "/v1/authorize"
+      body: "*"
+    };
+  }
+
+  rpc RefreshTokens (RefreshTokenRequest) returns (RefreshTokensResponse) {
+    option (google.api.http) = {
+      post: "/v1/refresh"
+      body: "*"
+    };
+  }
+}
+
+message CreateUserRequest {
+  string name = 1;
+  string email = 2;
+  string password = 3;
+}
+
+message CreateUserResponse {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+}
+
+message UserAuthorizationRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message UserAuthorizationResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 access_token_expires_at = 3;
+  int64 refresh_token_expires_at = 4;
+}
+
+message RefreshTokensResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 access_token_expires_at = 3;
+  int64 refresh_token_expires_at = 4;
+}
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
