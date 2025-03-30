@@ -19,6 +19,8 @@ import (
 	dbProto "db-service/proto"
 )
 
+//protoc -I ./proto -I . --go_out=. --go-grpc_out=. --grpc-gateway_out=. auth.proto
+
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

@@ -12,6 +12,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+//protoc -I ./proto -I . --go_out=. --go-grpc_out=. --grpc-gateway_out=. database.proto
+
 func main() {
 	if err := database.InitDB(); err != nil {
 		log.Fatalf("failed to initialize database: %v", err)
