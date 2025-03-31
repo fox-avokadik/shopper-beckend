@@ -19,6 +19,8 @@ message ExecuteQueryRequest {
 message ExecuteQueryResponse {
   string result = 1;
   string error = 2;
+  string code = 3;
+  string details = 4;
 }
 
 message QueryParam {

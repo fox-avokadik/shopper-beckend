@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5/pgconn"
 	"time"
 
 	database "db-service/proto"
@@ -153,6 +155,15 @@ func formatQueryResponse(results []map[string]interface{}) (*database.ExecuteQue
 }
 
 func errorResponse(err error) *database.ExecuteQueryResponse {
+	var pgErr *pgconn.PgError
+	if ok := errors.As(err, &pgErr); ok {
+		return &database.ExecuteQueryResponse{
+			Error:   err.Error(),
+			Code:    pgErr.Code,
+			Details: pgErr.Detail,
+		}
+	}
+
 	return &database.ExecuteQueryResponse{
 		Error: err.Error(),
 	}

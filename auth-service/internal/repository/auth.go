@@ -43,7 +43,11 @@ func (r *UserRepository) CreateUser(ctx context.Context, argv *requestes.UserReg
 	}
 
 	if response.Error != "" {
-		return nil, models.ErrEmailExists
+		if response.Code == "23505" {
+			return nil, models.ErrEmailExists
+		}
+
+		return nil, models.ErrInternal
 	}
 
 	var result struct {
@@ -80,6 +84,10 @@ func (r *UserRepository) UserAuthorize(ctx context.Context, argv *requestes.User
 
 	if err != nil {
 		return nil, models.ErrInternal
+	}
+
+	if response.Result == "" {
+		return nil, models.ErrUserNotFound
 	}
 
 	var result struct {
@@ -136,20 +144,20 @@ func (r *UserRepository) storeRefreshToken(ctx context.Context, userID string, r
 }
 
 func (r *UserRepository) RefreshTokens(ctx context.Context, refreshToken string) (*authProto.RefreshTokensResponse, error) {
-	userID, ok := ctx.Value("user_id").(string)
-	if !ok {
-		return nil, models.ErrUnauthorized
-	}
+	//userID, ok := ctx.Value("user_id").(string)
+	//if !ok {
+	//	return nil, models.ErrUnauthorized
+	//}
 
 	query := `
 		SELECT user_id, expires_at, is_revoked 
 		FROM refresh_tokens 
-		WHERE token = $1 AND user_id = $2
-	`
+		WHERE token = $1 
+	` // AND user_id = $2
 
 	params := []*dbProto.QueryParam{
 		{Value: &dbProto.QueryParam_StrValue{StrValue: refreshToken}},
-		{Value: &dbProto.QueryParam_StrValue{StrValue: userID}},
+		//{Value: &dbProto.QueryParam_StrValue{StrValue: userID}},
 	}
 
 	response, err := r.dbClient.ExecuteQuery(ctx, &dbProto.ExecuteQueryRequest{

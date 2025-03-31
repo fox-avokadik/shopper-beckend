@@ -79,6 +79,8 @@ type ExecuteQueryResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Result        string                 `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
 	Error         string                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	Code          string                 `protobuf:"bytes,3,opt,name=code,proto3" json:"code,omitempty"`
+	Details       string                 `protobuf:"bytes,4,opt,name=details,proto3" json:"details,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -123,6 +125,20 @@ func (x *ExecuteQueryResponse) GetResult() string {
 func (x *ExecuteQueryResponse) GetError() string {
 	if x != nil {
 		return x.Error
+	}
+	return ""
+}
+
+func (x *ExecuteQueryResponse) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *ExecuteQueryResponse) GetDetails() string {
+	if x != nil {
+		return x.Details
 	}
 	return ""
 }
@@ -312,10 +328,12 @@ const file_database_proto_rawDesc = "" +
 	"\x0edatabase.proto\x12\bdatabase\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\"Y\n" +
 	"\x13ExecuteQueryRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12,\n" +
-	"\x06params\x18\x02 \x03(\v2\x14.database.QueryParamR\x06params\"D\n" +
+	"\x06params\x18\x02 \x03(\v2\x14.database.QueryParamR\x06params\"r\n" +
 	"\x14ExecuteQueryResponse\x12\x16\n" +
 	"\x06result\x18\x01 \x01(\tR\x06result\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\"\xbd\x02\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\x12\x12\n" +
+	"\x04code\x18\x03 \x01(\tR\x04code\x12\x18\n" +
+	"\adetails\x18\x04 \x01(\tR\adetails\"\xbd\x02\n" +
 	"\n" +
 	"QueryParam\x12\x1d\n" +
 	"\tstr_value\x18\x01 \x01(\tH\x00R\bstrValue\x12\x1d\n" +
