@@ -13,4 +13,4 @@ FROM alpine:latest
 WORKDIR /app
 COPY --from=builder /auth-service .
 EXPOSE 8080
-CMD ["./auth-service"]ice"]
+CMD ["./auth-service"]
