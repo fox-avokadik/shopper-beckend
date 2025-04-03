@@ -13,4 +13,6 @@ RUN git clone --depth 1 https://github.com/citusdata/pg_cron.git && \
 
 RUN echo "shared_preload_libraries = 'pg_cron'" >> /etc/postgresql/postgresql.conf
 
+RUN echo "cron.database_name='testdb'" >> /etc/postgresql/postgresql.conf
+
 CMD ["postgres"]
