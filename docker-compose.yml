@@ -22,7 +22,7 @@ services:
       retries: 3
 
   postgres:
-    image: postgres:latest
+    build: ./postgres
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
