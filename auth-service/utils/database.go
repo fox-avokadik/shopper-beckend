@@ -62,24 +62,47 @@ func NewGormDB() (*gorm.DB, error) {
 
 func AutoMigrate(db *gorm.DB) error {
 	return db.Exec(`
-		CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-		
-		CREATE TABLE IF NOT EXISTS users (
-			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-			name TEXT NOT NULL,
-			email TEXT UNIQUE NOT NULL,
-			password_hash TEXT NOT NULL,
-			created_at TIMESTAMP DEFAULT NOW(),
-			updated_at TIMESTAMP DEFAULT NOW()
-		);
-		
-		CREATE TABLE IF NOT EXISTS refresh_tokens (
-			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-			token TEXT UNIQUE NOT NULL,
-			user_id UUID REFERENCES users(id),
-			created_at TIMESTAMP DEFAULT NOW(),
-			expires_at TIMESTAMP NOT NULL,
-			is_revoked BOOLEAN DEFAULT FALSE
-		);
-	`).Error
+        CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+        CREATE EXTENSION IF NOT EXISTS "pg_cron";
+        
+        CREATE TABLE IF NOT EXISTS users (
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            name TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
+        
+        CREATE OR REPLACE FUNCTION update_updated_at_column()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            NEW.updated_at = CURRENT_TIMESTAMP;
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+        
+        CREATE TRIGGER update_users_updated_at
+            BEFORE UPDATE ON users
+            FOR EACH ROW
+            EXECUTE FUNCTION update_updated_at_column();
+        
+        CREATE TABLE IF NOT EXISTS refresh_tokens (
+            token UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+            is_revoked BOOLEAN DEFAULT FALSE
+        );
+        
+        CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens (user_id);
+        CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires_at ON refresh_tokens (expires_at);
+        
+        SELECT cron.schedule(
+            '0 * * * *',
+            $$DELETE FROM refresh_tokens WHERE is_revoked = TRUE$$
+        );
+    `).Error
 }
