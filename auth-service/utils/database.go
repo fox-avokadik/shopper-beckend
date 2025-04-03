@@ -62,7 +62,6 @@ func NewGormDB() (*gorm.DB, error) {
 func AutoMigrate(db *gorm.DB) error {
 	return db.Exec(`
         CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-		CREATE EXTENSION IF NOT EXISTS "pg_cron";
         
         CREATE TABLE IF NOT EXISTS users (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -98,6 +97,8 @@ func AutoMigrate(db *gorm.DB) error {
         
         CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens (user_id);
         CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires_at ON refresh_tokens (expires_at);
+
+		CREATE EXTENSION IF NOT EXISTS "pg_cron";
 
 		SELECT cron.schedule(
 		  '0 * * * *',  -- кожну годину

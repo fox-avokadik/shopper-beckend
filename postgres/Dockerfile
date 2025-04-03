@@ -1,18 +1,10 @@
-FROM postgres:latest
+FROM postgres:16
 
-RUN apt-get update && apt-get install -y \
-    postgresql-server-dev-all \
-    build-essential \
-    curl \
-    git
+RUN apt-get update && \
+    apt-get install -y postgresql-16-cron && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN git clone --depth 1 https://github.com/citusdata/pg_cron.git && \
-    cd pg_cron && \
-    make && \
-    make install
-
-RUN echo "shared_preload_libraries = 'pg_cron'" >> /etc/postgresql/postgresql.conf
-
-RUN echo "cron.database_name='testdb'" >> /etc/postgresql/postgresql.conf
+RUN echo "shared_preload_libraries = 'pg_cron'" >> /usr/share/postgresql/16/postgresql.conf && \
+    echo "cron.database_name = 'testdb'" >> /usr/share/postgresql/16/postgresql.conf
 
 CMD ["postgres"]
