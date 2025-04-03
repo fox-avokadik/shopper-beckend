@@ -31,13 +31,13 @@ func GenerateAccessToken(user *models.User) (string, error) {
 	return token.SignedString(jwtKey)
 }
 
-func GenerateRefreshToken(user *models.User) (*models.RefreshToken, error) {
+func GenerateRefreshToken(userID uuid.UUID) (*models.RefreshToken, error) {
 	return &models.RefreshToken{
 		Token:     generateTokenString(),
-		UserID:    user.ID,
-		ExpiresAt: time.Now().Add(7 * 24 * time.Hour).UTC(),
-		IsRevoked: false,
+		UserID:    userID,
+		ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
 	}, nil
+
 }
 
 func generateTokenString() uuid.UUID {

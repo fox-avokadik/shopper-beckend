@@ -119,8 +119,7 @@ func (r *AuthRepository) RefreshToken(tokenString string) (string, string, error
 }
 
 func (r *AuthRepository) generateAndStoreRefreshToken(userID uuid.UUID) (string, error) {
-	var user models.User
-	token, _ := utils.GenerateRefreshToken(&user)
+	token, _ := utils.GenerateRefreshToken(userID)
 
 	if err := r.DB.Exec(`
 		INSERT INTO refresh_tokens (token, user_id, expires_at) 
