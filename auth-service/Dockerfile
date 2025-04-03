@@ -1,16 +1,16 @@
 # Білдер для компіляції
-FROM golang:1.21-alpine AS builder
+FROM golang:1.24-alpine AS builder
+
 WORKDIR /app
-COPY . .
+
+COPY go.mod go.sum ./
 RUN go mod download
+
+COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o /auth-service
 
-# Фінальний образ
 FROM alpine:latest
 WORKDIR /app
-COPY --from=builder /auth-service /app/auth-service
-COPY --from=builder /app/configs /app/configs  # Якщо є конфіги
-
-# Вказуємо порт та команду для запуску
+COPY --from=builder /auth-service .
 EXPOSE 8080
-CMD ["/app/auth-service"]
+CMD ["./auth-service"]ice"]
