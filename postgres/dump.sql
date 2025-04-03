@@ -1,9 +1,6 @@
 -- Активуйте розширення для генерації UUID
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Активуйте розширення pg_cron
-CREATE EXTENSION IF NOT EXISTS "pg_cron";
-
 -- Створення таблиці users
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -45,9 +42,3 @@ CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens (user_id);
 
 -- Індекс для expires_at для швидкої перевірки застарілих токенів
 CREATE INDEX idx_refresh_tokens_expires_at ON refresh_tokens (expires_at);
-
--- Автоматичне видалення записів, де is_revoked = TRUE, кожну годину
-SELECT cron.schedule(
-  '0 * * * *',  -- кожну годину
-  $$DELETE FROM refresh_tokens WHERE is_revoked = TRUE$$
-);

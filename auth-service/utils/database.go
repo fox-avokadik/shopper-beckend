@@ -16,7 +16,6 @@ func BuildDSN() string {
 	port := os.Getenv("DB_PORT")
 	sslmode := os.Getenv("DB_SSLMODE")
 
-	// Значення за замовчуванням
 	if host == "" {
 		host = "localhost"
 	}
@@ -63,7 +62,6 @@ func NewGormDB() (*gorm.DB, error) {
 func AutoMigrate(db *gorm.DB) error {
 	return db.Exec(`
         CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-        CREATE EXTENSION IF NOT EXISTS "pg_cron";
         
         CREATE TABLE IF NOT EXISTS users (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -99,10 +97,5 @@ func AutoMigrate(db *gorm.DB) error {
         
         CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens (user_id);
         CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires_at ON refresh_tokens (expires_at);
-        
-        SELECT cron.schedule(
-            '0 * * * *',
-            $$DELETE FROM refresh_tokens WHERE is_revoked = TRUE$$
-        );
     `).Error
 }

@@ -8,17 +8,14 @@ import (
 	"time"
 )
 
-// AuthHandler обробляє HTTP-запити, пов'язані з аутентифікацією
 type AuthHandler struct {
 	authRepo repositories.AuthRepositoryInterface
 }
 
-// NewAuthHandler приймає AuthRepositoryInterface через DI
 func NewAuthHandler(authRepo repositories.AuthRepositoryInterface) *AuthHandler {
 	return &AuthHandler{authRepo: authRepo}
 }
 
-// Register обробляє реєстрацію нового користувача
 func (h *AuthHandler) Register(c *gin.Context) {
 	var input struct {
 		Name     string `json:"name" binding:"required"`
@@ -44,7 +41,6 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	})
 }
 
-// Login обробляє вхід користувача
 func (h *AuthHandler) Login(c *gin.Context) {
 	var input struct {
 		Email    string `json:"email" binding:"required,email"`
@@ -69,7 +65,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	})
 }
 
-// RefreshToken оновлює токени доступу
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	token, err := c.Cookie("refresh_token")
 	if err != nil {
@@ -89,7 +84,6 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	})
 }
 
-// Допоміжні функції
 func setRefreshTokenCookie(c *gin.Context, token string, expires time.Time) {
 	c.SetCookie(
 		"refresh_token",

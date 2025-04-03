@@ -12,20 +12,16 @@ import (
 	"time"
 )
 
-// AuthRepository реалізує AuthRepositoryInterface
 type AuthRepository struct {
 	DB *gorm.DB
 }
 
-// Переконуємося, що AuthRepository реалізує інтерфейс
 var _ AuthRepositoryInterface = (*AuthRepository)(nil)
 
-// NewAuthRepository приймає *gorm.DB через DI
 func NewAuthRepository(db *gorm.DB) *AuthRepository {
 	return &AuthRepository{DB: db}
 }
 
-// Register створює нового користувача
 func (r *AuthRepository) Register(name, email, password string) (*models.User, string, string, error) {
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -59,7 +55,6 @@ func (r *AuthRepository) Register(name, email, password string) (*models.User, s
 	return &user, accessToken, refreshToken, nil
 }
 
-// Login автентифікує користувача
 func (r *AuthRepository) Login(email, password string) (*models.User, string, string, error) {
 	var user models.User
 	err := r.DB.Raw(`
@@ -90,7 +85,6 @@ func (r *AuthRepository) Login(email, password string) (*models.User, string, st
 	return &user, accessToken, refreshToken, nil
 }
 
-// RefreshToken оновлює токен доступу
 func (r *AuthRepository) RefreshToken(tokenString string) (string, string, error) {
 	token, err := uuid.Parse(tokenString)
 	if err != nil {
@@ -124,13 +118,9 @@ func (r *AuthRepository) RefreshToken(tokenString string) (string, string, error
 	return accessToken, newRefreshToken, nil
 }
 
-// Приватні методи
 func (r *AuthRepository) generateAndStoreRefreshToken(userID uuid.UUID) (string, error) {
-	token := &models.RefreshToken{
-		Token:     uuid.New(),
-		UserID:    userID,
-		ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
-	}
+	var user models.User
+	token, _ := utils.GenerateRefreshToken(&user)
 
 	if err := r.DB.Exec(`
 		INSERT INTO refresh_tokens (token, user_id, expires_at) 
