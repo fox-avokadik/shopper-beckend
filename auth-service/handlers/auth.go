@@ -60,8 +60,8 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	setRefreshTokenCookie(c, refreshToken, time.Now().Add(7*24*time.Hour))
 	c.JSON(http.StatusOK, gin.H{
-		"user":         user,
-		"access_token": accessToken,
+		"user":        user,
+		"accessToken": accessToken,
 	})
 }
 
