@@ -80,13 +80,13 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 
 	setRefreshTokenCookie(c, newRefreshToken, time.Now().Add(7*24*time.Hour))
 	c.JSON(http.StatusOK, gin.H{
-		"access_token": accessToken,
+		"accessToken": accessToken,
 	})
 }
 
 func setRefreshTokenCookie(c *gin.Context, token string, expires time.Time) {
 	c.SetCookie(
-		"refresh_token",
+		"refreshToken",
 		token,
 		int(time.Until(expires).Seconds()),
 		"/",
@@ -98,13 +98,13 @@ func setRefreshTokenCookie(c *gin.Context, token string, expires time.Time) {
 
 func getStatusCode(err error) int {
 	switch err.(*models.AppError).Code {
-	case "USER_EXISTS", "INVALID_CREDENTIALS":
+	case "user_already_exists", "invalid_credentials":
 		return http.StatusConflict
-	case "TOKEN_NOT_FOUND":
+	case "token_not_found":
 		return http.StatusNotFound
-	case "TOKEN_REVOKED", "TOKEN_EXPIRED":
+	case "token_revoked", "token_expired":
 		return http.StatusForbidden
-	case "INVALID_INPUT":
+	case "invalid_input":
 		return http.StatusBadRequest
 	default:
 		return http.StatusInternalServerError
