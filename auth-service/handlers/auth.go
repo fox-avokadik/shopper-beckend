@@ -66,7 +66,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 }
 
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
-	token, err := c.Cookie("refresh_token")
+	token, err := c.Cookie("refreshToken")
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, models.New("TOKEN_REQUIRED", "refresh token required"))
 		return
