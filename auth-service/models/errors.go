@@ -19,11 +19,11 @@ func New(code, message string) *AppError {
 }
 
 var (
-	ErrUserExists         = New("USER_EXISTS", "user already exists")
-	ErrInvalidCredentials = New("INVALID_CREDENTIALS", "invalid credentials")
-	ErrTokenExpired       = New("TOKEN_EXPIRED", "token expired")
-	ErrTokenRevoked       = New("TOKEN_REVOKED", "token revoked")
-	ErrTokenNotFound      = New("TOKEN_NOT_FOUND", "token not found")
-	ErrInvalidInput       = New("INVALID_INPUT", "invalid input data")
-	ErrInternalServer     = New("INTERNAL_ERROR", "internal server error")
+	ErrUserExists         = New("user_already_exists", "user already exists")
+	ErrInvalidCredentials = New("invalid_credentials", "invalid credentials")
+	ErrTokenExpired       = New("token_expired", "token expired")
+	ErrTokenRevoked       = New("token_revoked", "token revoked")
+	ErrTokenNotFound      = New("token_not_found", "token not found")
+	ErrInvalidInput       = New("invalid_input", "invalid input data")
+	ErrInternalServer     = New("internal_server_error", "internal server error")
 )
