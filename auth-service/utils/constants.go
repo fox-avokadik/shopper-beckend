@@ -8,7 +8,7 @@ const (
 )
 
 func TokenExpiryTime(duration time.Duration) time.Time {
-	return time.Now().Add(duration)
+	return time.Now().Add(duration).UTC()
 }
 
 func AccessTokenExpiry() time.Time {
