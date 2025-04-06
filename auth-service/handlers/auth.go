@@ -85,10 +85,13 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 }
 
 func setRefreshTokenCookie(c *gin.Context, token *models.RefreshToken) {
+	unixExpiry := token.ExpiresAt.Unix()
+	secondsUntilExpiry := int(unixExpiry - time.Now().Unix())
+
 	c.SetCookie(
 		"refreshToken",
 		token.Token.String(),
-		int(time.Until(token.ExpiresAt).Seconds()),
+		secondsUntilExpiry,
 		"/",
 		"",
 		false,
