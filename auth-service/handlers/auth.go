@@ -28,16 +28,18 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	user, accessToken, refreshToken, err := h.authRepo.Register(input.Name, input.Email, input.Password)
+	result, err := h.authRepo.Register(input.Name, input.Email, input.Password)
 	if err != nil {
 		c.JSON(getStatusCode(err), err)
 		return
 	}
 
-	setRefreshTokenCookie(c, refreshToken)
-	c.JSON(http.StatusCreated, gin.H{
-		"user":        user,
-		"accessToken": accessToken,
+	setRefreshTokenCookie(c, result.RefreshToken)
+	c.JSON(http.StatusOK, models.AuthenticationResponse{
+		User:            result.User,
+		AccessToken:     result.AccessToken,
+		AccessTokenExp:  result.AccessTokenExpiry,
+		RefreshTokenExp: result.RefreshToken.ExpiresAt.Unix(),
 	})
 }
 
@@ -52,16 +54,18 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	user, accessToken, refreshToken, err := h.authRepo.Login(input.Email, input.Password)
+	result, err := h.authRepo.Login(input.Email, input.Password)
 	if err != nil {
 		c.JSON(getStatusCode(err), err)
 		return
 	}
 
-	setRefreshTokenCookie(c, refreshToken)
-	c.JSON(http.StatusOK, gin.H{
-		"user":        user,
-		"accessToken": accessToken,
+	setRefreshTokenCookie(c, result.RefreshToken)
+	c.JSON(http.StatusOK, models.AuthenticationResponse{
+		User:            result.User,
+		AccessToken:     result.AccessToken,
+		AccessTokenExp:  result.AccessTokenExpiry,
+		RefreshTokenExp: result.RefreshToken.ExpiresAt.Unix(),
 	})
 }
 
@@ -72,21 +76,22 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	accessToken, newRefreshToken, err := h.authRepo.RefreshToken(token)
+	result, err := h.authRepo.RefreshToken(token)
 	if err != nil {
 		c.JSON(getStatusCode(err), err)
 		return
 	}
 
-	setRefreshTokenCookie(c, newRefreshToken)
-	c.JSON(http.StatusOK, gin.H{
-		"accessToken": accessToken,
+	setRefreshTokenCookie(c, result.RefreshToken)
+	c.JSON(http.StatusOK, models.AuthenticationResponse{
+		AccessToken:     result.AccessToken,
+		AccessTokenExp:  result.AccessTokenExpiry,
+		RefreshTokenExp: result.RefreshToken.ExpiresAt.Unix(),
 	})
 }
 
 func setRefreshTokenCookie(c *gin.Context, token *models.RefreshToken) {
-	unixExpiry := token.ExpiresAt.Unix()
-	secondsUntilExpiry := int(unixExpiry - time.Now().Unix())
+	secondsUntilExpiry := int(token.ExpiresAt.Unix() - time.Now().Unix())
 
 	c.SetCookie(
 		"refreshToken",

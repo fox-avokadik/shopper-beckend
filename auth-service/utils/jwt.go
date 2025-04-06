@@ -15,7 +15,7 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
-func GenerateAccessToken(user *models.User) (string, error) {
+func GenerateAccessToken(user *models.User) (string, int64, error) {
 	expirationTime := AccessTokenExpiry()
 	claims := &Claims{
 		UserID: user.ID.String(),
@@ -26,16 +26,17 @@ func GenerateAccessToken(user *models.User) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtKey)
+	tokenString, err := token.SignedString(jwtKey)
+	return tokenString, expirationTime.Unix(), err
 }
 
 func GenerateRefreshToken(userID uuid.UUID) (*models.RefreshToken, error) {
+	expiresAt := RefreshTokenExpiry()
 	return &models.RefreshToken{
 		Token:     generateTokenString(),
 		UserID:    userID,
-		ExpiresAt: RefreshTokenExpiry(),
+		ExpiresAt: expiresAt,
 	}, nil
-
 }
 
 func generateTokenString() uuid.UUID {
