@@ -34,7 +34,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	setRefreshTokenCookie(c, refreshToken, time.Now().Add(7*24*time.Hour))
+	setRefreshTokenCookie(c, refreshToken)
 	c.JSON(http.StatusCreated, gin.H{
 		"user":        user,
 		"accessToken": accessToken,
@@ -58,7 +58,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	setRefreshTokenCookie(c, refreshToken, time.Now().Add(7*24*time.Hour))
+	setRefreshTokenCookie(c, refreshToken)
 	c.JSON(http.StatusOK, gin.H{
 		"user":        user,
 		"accessToken": accessToken,
@@ -68,7 +68,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	token, err := c.Cookie("refreshToken")
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, models.New("TOKEN_REQUIRED", "refresh token required"))
+		c.JSON(http.StatusUnauthorized, models.New("token_required", "refresh token required"))
 		return
 	}
 
@@ -78,17 +78,17 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	setRefreshTokenCookie(c, newRefreshToken, time.Now().Add(7*24*time.Hour))
+	setRefreshTokenCookie(c, newRefreshToken)
 	c.JSON(http.StatusOK, gin.H{
 		"accessToken": accessToken,
 	})
 }
 
-func setRefreshTokenCookie(c *gin.Context, token string, expires time.Time) {
+func setRefreshTokenCookie(c *gin.Context, token *models.RefreshToken) {
 	c.SetCookie(
 		"refreshToken",
-		token,
-		int(time.Until(expires).Seconds()),
+		token.Token.String(),
+		int(time.Until(token.ExpiresAt).Seconds()),
 		"/",
 		"",
 		false,

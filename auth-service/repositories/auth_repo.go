@@ -22,10 +22,10 @@ func NewAuthRepository(db *gorm.DB) *AuthRepository {
 	return &AuthRepository{DB: db}
 }
 
-func (r *AuthRepository) Register(name, email, password string) (*models.User, string, string, error) {
+func (r *AuthRepository) Register(name, email, password string) (*models.User, string, *models.RefreshToken, error) {
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, "", "", models.New("hashing_failed", "failed to hash password")
+		return nil, "", nil, models.New("hashing_failed", "failed to hash password")
 	}
 
 	var user models.User
@@ -37,25 +37,25 @@ func (r *AuthRepository) Register(name, email, password string) (*models.User, s
 
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
-			return nil, "", "", models.ErrUserExists
+			return nil, "", nil, models.ErrUserExists
 		}
-		return nil, "", "", models.New("database_error", "failed to create user")
+		return nil, "", nil, models.New("database_error", "failed to create user")
 	}
 
 	accessToken, err := utils.GenerateAccessToken(&user)
 	if err != nil {
-		return nil, "", "", models.New("token_generate_failed", "failed to generate access token")
+		return nil, "", nil, models.New("token_generate_failed", "failed to generate access token")
 	}
 
 	refreshToken, err := r.generateAndStoreRefreshToken(user.ID)
 	if err != nil {
-		return nil, "", "", err
+		return nil, "", nil, err
 	}
 
 	return &user, accessToken, refreshToken, nil
 }
 
-func (r *AuthRepository) Login(email, password string) (*models.User, string, string, error) {
+func (r *AuthRepository) Login(email, password string) (*models.User, string, *models.RefreshToken, error) {
 	var user models.User
 	err := r.DB.Raw(`
 		SELECT id, name, email, password_hash, created_at, updated_at
@@ -63,72 +63,72 @@ func (r *AuthRepository) Login(email, password string) (*models.User, string, st
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, "", "", models.ErrInvalidCredentials
+			return nil, "", nil, models.ErrInvalidCredentials
 		}
-		return nil, "", "", models.New("database_error", "failed to authenticate user")
+		return nil, "", nil, models.New("database_error", "failed to authenticate user")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
-		return nil, "", "", models.ErrInvalidCredentials
+		return nil, "", nil, models.ErrInvalidCredentials
 	}
 
 	accessToken, err := utils.GenerateAccessToken(&user)
 	if err != nil {
-		return nil, "", "", models.New("token_generate_failed", "failed to generate access token")
+		return nil, "", nil, models.New("token_generate_failed", "failed to generate access token")
 	}
 
 	refreshToken, err := r.generateAndStoreRefreshToken(user.ID)
 	if err != nil {
-		return nil, "", "", err
+		return nil, "", nil, err
 	}
 
 	return &user, accessToken, refreshToken, nil
 }
 
-func (r *AuthRepository) RefreshToken(tokenString string) (string, string, error) {
+func (r *AuthRepository) RefreshToken(tokenString string) (string, *models.RefreshToken, error) {
 	token, err := uuid.Parse(tokenString)
 	if err != nil {
-		return "", "", models.ErrInvalidInput
+		return "", nil, models.ErrInvalidInput
 	}
 
 	refreshToken, err := r.validateRefreshToken(token)
 	if err != nil {
-		return "", "", err
+		return "", nil, err
 	}
 
 	if err := r.revokeRefreshToken(token); err != nil {
-		return "", "", err
+		return "", nil, err
 	}
 
 	var user models.User
 	if err := r.DB.Raw("SELECT id, name, email FROM users WHERE id = ?", refreshToken.UserID).Scan(&user).Error; err != nil {
-		return "", "", models.ErrInvalidCredentials
+		return "", nil, models.ErrInvalidCredentials
 	}
 
 	accessToken, err := utils.GenerateAccessToken(&user)
 	if err != nil {
-		return "", "", models.New("token_generate_failed", "failed to generate access token")
+		return "", nil, models.New("token_generate_failed", "failed to generate access token")
 	}
 
 	newRefreshToken, err := r.generateAndStoreRefreshToken(user.ID)
 	if err != nil {
-		return "", "", err
+		return "", nil, err
 	}
 
 	return accessToken, newRefreshToken, nil
 }
 
-func (r *AuthRepository) generateAndStoreRefreshToken(userID uuid.UUID) (string, error) {
+func (r *AuthRepository) generateAndStoreRefreshToken(userID uuid.UUID) (*models.RefreshToken, error) {
 	token, _ := utils.GenerateRefreshToken(userID)
 
 	if err := r.DB.Exec(`
 		INSERT INTO refresh_tokens (token, user_id, expires_at) 
 		VALUES (?, ?, ?)`,
 		token.Token, token.UserID, token.ExpiresAt).Error; err != nil {
-		return "", models.New("token_storage_failed", "failed to store refresh token")
+		return nil, models.New("token_storage_failed", "failed to store refresh token")
 	}
 
-	return token.Token.String(), nil
+	return token, nil
 }
 
 func (r *AuthRepository) validateRefreshToken(token uuid.UUID) (*models.RefreshToken, error) {

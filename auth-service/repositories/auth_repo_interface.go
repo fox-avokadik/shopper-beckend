@@ -5,7 +5,7 @@ import (
 )
 
 type AuthRepositoryInterface interface {
-	Register(name, email, password string) (*models.User, string, string, error)
-	Login(email, password string) (*models.User, string, string, error)
-	RefreshToken(tokenString string) (string, string, error)
+	Register(name, email, password string) (*models.User, string, *models.RefreshToken, error)
+	Login(email, password string) (*models.User, string, *models.RefreshToken, error)
+	RefreshToken(tokenString string) (string, *models.RefreshToken, error)
 }
