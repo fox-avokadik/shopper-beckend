@@ -61,7 +61,6 @@ func NewGormDB() (*gorm.DB, error) {
 }
 
 func AutoMigrate(db *gorm.DB) error {
-	// Виконання всіх операцій у транзакції
 	tx := db.Begin()
 	defer func() {
 		if r := recover(); r != nil {
@@ -69,7 +68,6 @@ func AutoMigrate(db *gorm.DB) error {
 		}
 	}()
 
-	// 1. Видалення тригерів
 	if err := tx.Exec(`
         DROP TRIGGER IF EXISTS update_users_updated_at ON users;
         DROP TRIGGER IF EXISTS token_expiry_trigger ON refresh_tokens;
@@ -81,7 +79,6 @@ func AutoMigrate(db *gorm.DB) error {
 		return fmt.Errorf("помилка видалення тригерів: %v", err)
 	}
 
-	// 2. Створення розширень
 	if err := tx.Exec(`
         CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
         CREATE EXTENSION IF NOT EXISTS "pg_cron";
@@ -90,9 +87,7 @@ func AutoMigrate(db *gorm.DB) error {
 		return fmt.Errorf("помилка створення розширень: %v", err)
 	}
 
-	// 3. Створення таблиць
 	if err := tx.Exec(`
-        -- Roles table
         CREATE TABLE IF NOT EXISTS roles (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             name TEXT UNIQUE NOT NULL,
@@ -110,7 +105,6 @@ func AutoMigrate(db *gorm.DB) error {
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
 
-        -- User roles junction table
         CREATE TABLE IF NOT EXISTS user_roles (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -132,7 +126,6 @@ func AutoMigrate(db *gorm.DB) error {
 		return fmt.Errorf("помилка створення таблиць: %v", err)
 	}
 
-	// 4. Створення індексів
 	if err := tx.Exec(`
         CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
         CREATE INDEX IF NOT EXISTS idx_roles_name ON roles (name);
@@ -146,7 +139,6 @@ func AutoMigrate(db *gorm.DB) error {
 		return fmt.Errorf("помилка створення індексів: %v", err)
 	}
 
-	// 5. Створення функцій
 	if err := tx.Exec(`
         CREATE OR REPLACE FUNCTION update_updated_at_column()
         RETURNS TRIGGER AS $func$
@@ -183,22 +175,17 @@ func AutoMigrate(db *gorm.DB) error {
         END;
         $func$ LANGUAGE plpgsql;
 
-        -- Function to ensure a user has at least one role (defaulting to USER if none)
         CREATE OR REPLACE FUNCTION ensure_user_has_default_role()
         RETURNS TRIGGER AS $func$
         DECLARE
             user_role_id UUID;
             default_role_id UUID;
         BEGIN
-            -- Check if user already has any role
             SELECT role_id INTO user_role_id FROM user_roles WHERE user_id = NEW.id LIMIT 1;
             
-            -- If no role, assign the default USER role
             IF user_role_id IS NULL THEN
-                -- Get the USER role ID
                 SELECT id INTO default_role_id FROM roles WHERE name = 'USER' LIMIT 1;
                 
-                -- If USER role exists, assign it to the new user
                 IF default_role_id IS NOT NULL THEN
                     INSERT INTO user_roles (user_id, role_id)
                     VALUES (NEW.id, default_role_id);
@@ -209,7 +196,6 @@ func AutoMigrate(db *gorm.DB) error {
         END;
         $func$ LANGUAGE plpgsql;
 
-        -- Helper function to check if a user has a specific role
         CREATE OR REPLACE FUNCTION user_has_role(p_user_id UUID, p_role_name TEXT)
         RETURNS BOOLEAN AS $func$
         BEGIN
@@ -227,7 +213,6 @@ func AutoMigrate(db *gorm.DB) error {
 		return fmt.Errorf("помилка створення функцій: %v", err)
 	}
 
-	// 6. Створення тригерів
 	if err := tx.Exec(`
         CREATE TRIGGER update_users_updated_at
             BEFORE UPDATE ON users
@@ -249,7 +234,6 @@ func AutoMigrate(db *gorm.DB) error {
             FOR EACH ROW
             EXECUTE FUNCTION check_token_expiry();
 
-        -- Trigger to ensure every new user gets a default role
         CREATE TRIGGER user_default_role_trigger
             AFTER INSERT ON users
             FOR EACH ROW
@@ -259,9 +243,7 @@ func AutoMigrate(db *gorm.DB) error {
 		return fmt.Errorf("помилка створення тригерів: %v", err)
 	}
 
-	// 7. Вставка базових ролей
 	if err := tx.Exec(`
-        -- Insert default roles
         INSERT INTO roles (name, description)
         VALUES 
             ('ADMIN', 'Administrator with full system access'),
@@ -274,7 +256,6 @@ func AutoMigrate(db *gorm.DB) error {
 		return fmt.Errorf("помилка додавання базових ролей: %v", err)
 	}
 
-	// 8. Налаштування pg_cron (як у вашому dump.sql)
 	if err := tx.Exec(`
         DO $$
         BEGIN
@@ -299,7 +280,6 @@ func AutoMigrate(db *gorm.DB) error {
         END $$;
     `).Error; err != nil {
 		log.Printf("Попередження: не вдалося налаштувати pg_cron: %v", err)
-		// Не відкатуємо всю транзакцію через помилку pg_cron
 	}
 
 	return tx.Commit().Error
